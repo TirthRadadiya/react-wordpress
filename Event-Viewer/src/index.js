@@ -1,8 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-
-const App = () => {
-  return <h1>Hello, React from Scratch!</h1>;
-};
+import App from "./App";
+import "./index.css";
 
 ReactDOM.render(<App />, document.getElementById("root"));
