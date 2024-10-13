@@ -109,6 +109,10 @@ button:hover {
   font-size: 14px;
   z-index: 1;
   white-space: nowrap;
+
+  a {
+    color: #fff;
+  }
 }
 
 @media (max-width: 768px) {

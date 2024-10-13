@@ -2,7 +2,6 @@
 // https://central.wordcamp.org/wp-json/wp/v2/wordcamps?per_page=100&status=wcpt-scheduled
 
 import React, { useState, useEffect } from "react";
-import parse from "html-react-parser";
 
 const getDaysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (month, year) => new Date(year, month, 1).getDay();
@@ -11,11 +10,62 @@ const Calendar = () => {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [startEvents, setStartEvents] = useState({});
   const [days, setDays] = useState([]);
 
   useEffect(() => {
     generateCalendar(currentMonth, currentYear);
   }, [currentMonth, currentYear]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await fetch(
+        "https://central.wordcamp.org/wp-json/wp/v2/wordcamps?per_page=100&status=wcpt-scheduled"
+      );
+      const data = await response.json();
+
+      data.forEach((event) => {
+        const { year, month, day } = convertTimestampToDateTime(
+          event["Start Date (YYYY-mm-dd)"]
+        );
+
+        setStartEvents((prev) => {
+          const prevObj = startEvents[`${day}-${month}-${year}`];
+          let newObj;
+          if (prevObj) {
+            newObj = {
+              [`${day}-${month}-${year}`]: [
+                ...prevObj,
+                { year, month, day, event },
+              ],
+            };
+          } else {
+            newObj = {
+              [`${day}-${month}-${year}`]: [{ year, month, day, event }],
+            };
+          }
+          return {
+            ...prev,
+            ...newObj,
+          };
+        });
+      });
+    };
+
+    fetchData();
+  }, []);
+
+  function convertTimestampToDateTime(timestamp) {
+    // Multiply by 1000 to convert seconds to milliseconds
+    const date = new Date(timestamp * 1000);
+
+    // Extract month, day, and year
+    const year = date.getFullYear();
+    let month = date.getMonth() + 1; // getMonth() is zero-based, so add 1
+    const day = date.getDate();
+
+    return { year, month, day };
+  }
 
   const generateCalendar = (month, year) => {
     const daysInMonth = getDaysInMonth(month, year);
@@ -99,6 +149,18 @@ const Calendar = () => {
               key={index}
               className={day && `calendar-day ${isToday(day) ? "today" : ""}`}
             >
+              {day &&
+                startEvents[`${day}-${currentMonth + 1}-${currentYear}`] && (
+                  <p className="tooltiptext">
+                    {startEvents[
+                      `${day}-${currentMonth + 1}-${currentYear}`
+                    ]?.map((currentEvent, index) => (
+                      <a href={currentEvent.event.link} key={index}>
+                        <span>{currentEvent.event.title.rendered}</span>
+                      </a>
+                    ))}
+                  </p>
+                )}
               {day || ""}
             </div>
           ))}
